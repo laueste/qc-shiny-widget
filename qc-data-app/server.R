@@ -57,7 +57,7 @@ shinyServer(function(input, output) {
 			pwd=warehouse_user')
 		dataInput <- sqlQuery(dbhandle, paste("SELECT assay_MDL,assay_plate_label,raw_assay_value,row,col
 									FROM dataout.furnace.hts_all_well_data
-									WHERE assay_MDL = ", mdl_id, sep="")
+									WHERE assay_MDL = ", mdl_id, sep=""))
 		if((is.null(dataInput))||(NROW(dataInput) == 0)) {return(NULL)}
 		dataInput$volume_uL <- trz_to_vol(dataInput[["raw_assay_value"]])
 		return(dataInput)
