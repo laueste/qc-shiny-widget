@@ -6,9 +6,10 @@ shinyUI(fluidPage(
 	titlePanel("Media Filler QC"),
 	sidebarLayout(
 		sidebarPanel(
-			numericInput("fill", label = h3("Fill Volume (uL)"), value = 235),
+			numericInput("fill", label = h3("Fill Volume (uL)"), value = 200),
 			numericInput("err", label = h3("Error Tolerance (uL)"), value = 5),
 			textInput("mdlN", label = h3("MDL Number")),
+			p("Database connection isn't super fast. Once MDL is entered, hang tight for a few minutes..."),
 			textOutput("plateWarning")
 		),
 		mainPanel(

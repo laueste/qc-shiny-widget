@@ -48,20 +48,23 @@ shinyServer(function(input, output) {
 	#INPUT DATA
 	#data input from user-input MDL number. Assay data must be available on Argus.
 	df <- reactive({
-		mdl_id <- paste('MDL-', toString(input$mdlN), sep="")
+		if(input$mdlN == "") {return(NULL)}
+		mdl_id <- paste("'MDL-", toString(input$mdlN),"'", sep="")
 		# SQL Query
 		dbhandle <- odbcDriverConnect('driver={SQL Server};
 			server=sqlwarehouse1.amyris.local;
 			database=dataout;
 			uid=warehouse_user;
 			pwd=warehouse_user')
-		dataInput <- sqlQuery(dbhandle, paste("SELECT assay_MDL,assay_plate_label,raw_assay_value,row,col
+		qr <- sqlQuery(dbhandle, paste("SELECT assay_MDL,assay_plate_label,raw_assay_value,row,col
 									FROM dataout.furnace.hts_all_well_data
 									WHERE assay_MDL = ", mdl_id, sep=""))
-		if((is.null(dataInput))||(NROW(dataInput) == 0)) {return(NULL)}
+		if((is.null(qr))||(NROW(qr) == 0)) {return(NULL)}
+		dataInput <- data.frame(qr)  #qr starts out as a list of lists; convert to dataframe
 		dataInput$volume_uL <- trz_to_vol(dataInput[["raw_assay_value"]])
 		return(dataInput)
-	)
+		#odbcClose(dbhandle)
+	})
 
 
 	# DATA TABLES
@@ -155,7 +158,6 @@ shinyServer(function(input, output) {
 		sp <- qplot(assay_plate_label,volume_uL,color=assay_plate_label,data=data)
 		color_set <- plt_colors()[selected_plts()]
 		sp+scale_color_manual(values=color_set)+labs(title=paste("PLATES: MDL-",input$mdlN,sep=""))+
->>>>>>> a1178b22e230637eaa16751264223ae58bfaf0d1
 		geom_hline(yintercept=fill_vol(),color='black')+
 		geom_hline(yintercept=fill_vol()-vol_err(),color='blue',linetype='dotdash')+
 		geom_hline(yintercept=fill_vol()+vol_err(),color='blue',linetype='dotdash')+
@@ -187,9 +189,6 @@ shinyServer(function(input, output) {
 		data$col <- as.factor(data$col)
 		sp <- qplot(col,volume_uL,color=col,data=data)
 		color_set <- col_colors()[as.integer(selected_cols())]
-<<<<<<< HEAD
-		sp+scale_color_manual(values=color_set)+labs(title=paste("COLUMNS:"))+
-=======
 		sp+scale_color_manual(values=color_set)+labs(title=paste("COLUMNS: MDL-",input$mdlN,sep=""))+
 		geom_hline(yintercept=fill_vol(),color='black')+
 		geom_hline(yintercept=fill_vol()-vol_err(),color='blue',linetype='dotdash')+
