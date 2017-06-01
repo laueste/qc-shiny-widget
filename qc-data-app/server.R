@@ -3,6 +3,7 @@
 library(shiny)
 library(plyr)
 library(ggplot2)
+library(RODBC)
 
 #Helper Functions and Values
 default_fill_vol <- 200.0
@@ -45,20 +46,28 @@ shinyServer(function(input, output) {
 
 
 	#INPUT DATA
-	#data input from user-chosen file. Must have "raw_assay_value", "MDL", "row", and "col" columns.
+	#data input from user-input MDL number. Assay data must be available on Argus.
 	df <- reactive({
-		inFile <- input$dataFile
-		if (is.null(inFile)) {return(NULL)}
-	    dataInput <- read.csv(inFile$datapath, header=TRUE, sep=",")
-	    dataInput$volume_uL <- trz_to_vol(dataInput[["raw_assay_value"]])
-	    return(dataInput)
-	})
+		mdl_id <- paste('MDL-', toString(input$mdlN), sep="")
+		# SQL Query
+		dbhandle <- odbcDriverConnect('driver={SQL Server};
+			server=sqlwarehouse1.amyris.local;
+			database=dataout;
+			uid=warehouse_user;
+			pwd=warehouse_user')
+		dataInput <- sqlQuery(dbhandle, paste("SELECT assay_MDL,assay_plate_label,raw_assay_value,row,col
+									FROM dataout.furnace.hts_all_well_data
+									WHERE assay_MDL = ", mdl_id, sep="")
+		if((is.null(dataInput))||(NROW(dataInput) == 0)) {return(NULL)}
+		dataInput$volume_uL <- trz_to_vol(dataInput[["raw_assay_value"]])
+		return(dataInput)
+	)
 
 
 	# DATA TABLES
 	plt_df <- reactive({
 		if (is.null(df())) {return(NULL)} 
-		ddply(df(), c("MDL","assay_plate_label"), here(summarize),
+		ddply(df(), c("assay_MDL","assay_plate_label"), here(summarize),
 			mean_uL = mean(volume_uL), 
 			cv = CV(volume_uL),
 			std_err = std_err(volume_uL),
@@ -68,8 +77,8 @@ shinyServer(function(input, output) {
 	output$plate_table <- renderDataTable({ plt_df() })
 
 	col_df <- reactive({
-		if (is.null(df())) {return(NULL)} 
-		ddply(df(), c("MDL","col"), here(summarize),
+		if (is.null(df())) {return(NULL)}
+		        ddply(df(),c("assay_MDL","row"), here(summarize),
 			mean_uL = mean(volume_uL), 
 			cv = CV(volume_uL),
 			std_err = std_err(volume_uL),
@@ -77,11 +86,10 @@ shinyServer(function(input, output) {
 		) 
 	})
 	output$col_table <- renderDataTable({ col_df() })
-
 	
 	row_df <- reactive({
 		if (is.null(df())) {return(NULL)} 
-		ddply(df(), c("MDL","row"), here(summarize),
+		ddply(df(), c("assay_MDL","row"), here(summarize),
 			mean_uL = mean(volume_uL), 
 			cv = CV(volume_uL),
 			std_err = std_err(volume_uL),
@@ -146,7 +154,8 @@ shinyServer(function(input, output) {
 		data$assay_plate_label <- as.factor(data$assay_plate_label)
 		sp <- qplot(assay_plate_label,volume_uL,color=assay_plate_label,data=data)
 		color_set <- plt_colors()[selected_plts()]
-		sp+scale_color_manual(values=color_set)+labs(title=paste("PLATES"))+
+		sp+scale_color_manual(values=color_set)+labs(title=paste("PLATES: MDL-",input$mdlN,sep=""))+
+>>>>>>> a1178b22e230637eaa16751264223ae58bfaf0d1
 		geom_hline(yintercept=fill_vol(),color='black')+
 		geom_hline(yintercept=fill_vol()-vol_err(),color='blue',linetype='dotdash')+
 		geom_hline(yintercept=fill_vol()+vol_err(),color='blue',linetype='dotdash')+
@@ -178,7 +187,10 @@ shinyServer(function(input, output) {
 		data$col <- as.factor(data$col)
 		sp <- qplot(col,volume_uL,color=col,data=data)
 		color_set <- col_colors()[as.integer(selected_cols())]
+<<<<<<< HEAD
 		sp+scale_color_manual(values=color_set)+labs(title=paste("COLUMNS:"))+
+=======
+		sp+scale_color_manual(values=color_set)+labs(title=paste("COLUMNS: MDL-",input$mdlN,sep=""))+
 		geom_hline(yintercept=fill_vol(),color='black')+
 		geom_hline(yintercept=fill_vol()-vol_err(),color='blue',linetype='dotdash')+
 		geom_hline(yintercept=fill_vol()+vol_err(),color='blue',linetype='dotdash')+
@@ -212,7 +224,7 @@ shinyServer(function(input, output) {
 		data$row <- as.factor(data$row)
 		sp <- qplot(row,volume_uL,color=row,data=data)
 		color_set <- row_colors()[as.integer(selected_rows())]
-		sp+scale_color_manual(values=color_set)+labs(title=paste("ROWS:"))+
+		sp+scale_color_manual(values=color_set)+labs(title=paste("ROWS: MDL-",input$mdlN,sep=""))+
 		geom_hline(yintercept=fill_vol(),color='black')+
 		geom_hline(yintercept=fill_vol()-vol_err(),color='blue',linetype='dotdash')+
 		geom_hline(yintercept=fill_vol()+vol_err(),color='blue',linetype='dotdash')+
