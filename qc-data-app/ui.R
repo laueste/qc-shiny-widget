@@ -6,10 +6,9 @@ shinyUI(fluidPage(
 	titlePanel("Media Filler QC"),
 	sidebarLayout(
 		sidebarPanel(
-			uiOutput("mdlSet"),
 			numericInput("fill", label = h3("Fill Volume (uL)"), value = 235),
 			numericInput("err", label = h3("Error Tolerance (uL)"), value = 5),
-			fileInput("dataFile", label = h3("Data File Input")),
+			textInput("mdlN", label = h3("MDL Number")),
 			textOutput("plateWarning"),
 			textOutput("fileInfo")
 		),
