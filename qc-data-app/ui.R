@@ -6,15 +6,18 @@ shinyUI(fluidPage(
 	titlePanel("Media Filler QC"),
 	sidebarLayout(
 		sidebarPanel(
-			uiOutput("mdlSet"),
-			numericInput("fill", label = h3("Fill Volume (uL)"), value = 235),
+			numericInput("fill", label = h3("Fill Volume (uL)"), value = 200),
 			numericInput("err", label = h3("Error Tolerance (uL)"), value = 5),
 			fileInput("dataFile", label = h3("Data File Input")),
-			textOutput("plateWarning"),
-			textOutput("fileInfo")
+			textOutput("plateWarning")
 		),
 		mainPanel(
 			tabsetPanel(id = 'tabs',
+				tabPanel("summary",     #blank cols are just for formatting
+					fluidRow(column(2),column(10,h3(textOutput("pltSummary")))), 
+					fluidRow(column(2),column(10,h3(textOutput("colSummary")))),
+					fluidRow(column(2),column(10,h3(textOutput("rowSummary"))))
+				),
 				tabPanel("plates",
 					fluidRow(column(2,uiOutput("pltSet")),column(10,plotOutput("plotPlate"))),
 					fluidRow(column(12,dataTableOutput("plate_table")))
