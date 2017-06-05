@@ -8,8 +8,8 @@ library(RODBC)
 #Helper Functions and Values
 default_fill_vol <- 200.0
 default_vol_err <- 5.0
-trz_slope <- 163.2255   #ESTIMATE! change this
-trz_intc <- -6.2383    #ESTIMATE! change this
+trz_slope <- 166.3  #146.7005   # n=5 []s in test, m=96 samples per []
+trz_intc <- 0.0     #-28.0581
 trz_conc <- 0.04   #g/L
 max_cv <- 0.8  #flag if over this value.
 
@@ -35,8 +35,20 @@ trz_to_vol <- function(assay_val) {
 	intc <- trz_intc
 	(slope*assay_val) + intc
 }
-
-
+#SQL Querying
+query <- function(input_id) {
+	dbhandle <- odbcDriverConnect('driver={SQL Server};
+			server=sqlwarehouse1.amyris.local;
+			database=dataout;
+			uid=warehouse_user;
+			pwd=warehouse_user')
+		qr <- sqlQuery(dbhandle, paste("SELECT assay_MDL,assay_plate_label,raw_assay_value,row,col
+									FROM dataout.furnace.hts_all_well_data
+									WHERE assay_MDL = ", input_id, sep=""))
+		odbcClose(dbhandle)
+		if((is.null(qr))||(NROW(qr) == 0)) {return(NULL)}
+		return(data.frame(qr)) #qr starts out as a list of lists; convert to dataframe
+}
 
 #Shiny Server Interaction
 shinyServer(function(input, output) {
@@ -51,19 +63,9 @@ shinyServer(function(input, output) {
 		if(input$mdlN == "") {return(NULL)}
 		mdl_id <- paste("'MDL-", toString(input$mdlN),"'", sep="")
 		# SQL Query
-		dbhandle <- odbcDriverConnect('driver={SQL Server};
-			server=sqlwarehouse1.amyris.local;
-			database=dataout;
-			uid=warehouse_user;
-			pwd=warehouse_user')
-		qr <- sqlQuery(dbhandle, paste("SELECT assay_MDL,assay_plate_label,raw_assay_value,row,col
-									FROM dataout.furnace.hts_all_well_data
-									WHERE assay_MDL = ", mdl_id, sep=""))
-		if((is.null(qr))||(NROW(qr) == 0)) {return(NULL)}
-		dataInput <- data.frame(qr)  #qr starts out as a list of lists; convert to dataframe
+		dataInput <- query(mdl_id)
 		dataInput$volume_uL <- trz_to_vol(dataInput[["raw_assay_value"]])
 		return(dataInput)
-		#odbcClose(dbhandle)
 	})
 
 
@@ -105,7 +107,7 @@ shinyServer(function(input, output) {
 	output$pltSummary <- renderText({
 		if (is.null(df())) {return(NULL)}
 		plt_data <- plt_df()
-		hi_cvs <- plt_data[plt_data$cv > max_cv]
+		hi_cvs <- plt_data[plt_data$cv > max_cv,]
 		if (length(hi_cvs) > 0) {
 			return(paste("By Plate:","WARNING - one or more CVs is >",max_cv))
 		}
@@ -115,7 +117,7 @@ shinyServer(function(input, output) {
 	output$colSummary <- renderText({
 		if (is.null(df())) {return(NULL)}
 		col_data <- col_df()
-		hi_cvs <- col_data[col_data$cv > max_cv]
+		hi_cvs <- col_data[col_data$cv > max_cv,]
 		if (length(hi_cvs) > 0) {
 			return(paste("By Column:","WARNING - one or more CVs is >",max_cv))
 		}
@@ -125,7 +127,7 @@ shinyServer(function(input, output) {
 	output$rowSummary <- renderText({
 		if (is.null(df())) {return(NULL)}
 		row_data <- row_df()
-		hi_cvs <- row_data[row_data$cv > max_cv]
+		hi_cvs <- row_data[row_data$cv > max_cv,]
 		if (length(hi_cvs) > 0) {
 			return(paste("By Row:","WARNING - one or more CVs is >",max_cv))
 		}
@@ -237,7 +239,5 @@ shinyServer(function(input, output) {
 		if (nPlates < 12) {return(NULL)}
 		paste(c("Warning: cannot plot by plate if > 12 plates. Input data has",nPlates))
 	})
-
-
 
 })
