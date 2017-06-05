@@ -109,7 +109,7 @@ shinyServer(function(input, output) {
 		plt_data <- plt_df()
 		hi_cvs <- plt_data[plt_data$cv > max_cv,]
 		if (length(hi_cvs) > 0) {
-			return(paste("By Plate:","WARNING - one or more CVs is >",max_cv))
+			return(paste("By Plate:","WARNING - one or more CV is >",max_cv))
 		}
 		return(paste("By Plate:", "CVs are all below",max_cv))
 	})
@@ -119,7 +119,7 @@ shinyServer(function(input, output) {
 		col_data <- col_df()
 		hi_cvs <- col_data[col_data$cv > max_cv,]
 		if (length(hi_cvs) > 0) {
-			return(paste("By Column:","WARNING - one or more CVs is >",max_cv))
+			return(paste("By Column:","WARNING - one or more CV is >",max_cv))
 		}
 		return(paste("By Column:", "CVs are all below",max_cv))
 	})
@@ -129,7 +129,7 @@ shinyServer(function(input, output) {
 		row_data <- row_df()
 		hi_cvs <- row_data[row_data$cv > max_cv,]
 		if (length(hi_cvs) > 0) {
-			return(paste("By Row:","WARNING - one or more CVs is >",max_cv))
+			return(paste("By Row:","WARNING - one or more CV is >",max_cv))
 		}
 		return(paste("By Row:", "CVs are all below",max_cv))
 	})
